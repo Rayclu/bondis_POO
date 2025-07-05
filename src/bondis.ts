@@ -1,11 +1,17 @@
+import { Paradas } from './paradas.ts'
 
-type Recorrido{
+type Recorrido = [];
 
-}
 class Bondis {
-    private recorrido:Recorrido;
-
-    constructor(recorrido:Recorrido) {
-        this.recorrido = recorrido;
+    // @ts-ignore
+    private recorrido: Recorrido = [];
+    //public  linea:number;
+    private  readonly  RecorridosPosibles: {number: paradas[]} = {
+        29: []
+    };
+    constructor(linea:number) {
+        // const {RecorridosPosibles} = this;
+        // @ts-ignore
+        this.recorrido = this.RecorridosPosibles[linea];
     }
 }
