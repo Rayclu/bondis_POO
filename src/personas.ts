@@ -1,5 +1,4 @@
-class Personas {
-    // @ts-ignore
+export class Personas {
     private needPriority:boolean;
     constructor(
         {edad, someProblem}: { edad: number, someProblem: boolean }
