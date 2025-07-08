@@ -1,29 +1,37 @@
 import { Personas } from './personas';
-export class Paradas implements Terminal, Header{
-    private queue:any[] = [];
-    public name: string;
 
-    constructor(name:string){
+class Paradas{
+    public queue:any[] = [];
+    public name: string;
+    private TermOrHeader: boolean; // true = header | false = terminal
+    constructor(name:string, TermOrHeader: boolean = false) {
         this.name = name;
+        this.TermOrHeader = TermOrHeader;
     }
-    //inLinePerson(person: { edad: number; someProblem: boolean }): void{
-    
     inLinePerson(person: Personas ): void{
-        // console.log(person);
-        // console.log(this.queue)
         this.queue.push(person)
+        
+    }
+    outlinePerson(){
+        return this.queue.pop();
+    }
+}
+class Terminal extends Paradas{
+    constructor(name:string, TermOrHeader:boolean = true){
+        super(name, true);
     }
 }
 
-// function TestingMain():void{
+class Cabecera extends Paradas{
+    constructor(name:string, TermOrHeader:boolean = true) {
+        super(name, true)
+    }
+}
 
-//     const  parada = new Paradas("Testeo");
-//     //console.log(parada);
-//     parada.inLinePerson( new Personas( { edad: 79, someProblem: false } ) );
-//     parada.inLinePerson( new Personas( { edad: 30, someProblem: false } ) );
-//     parada.inLinePerson( new Personas( { edad: 18, someProblem: true  } ) );
-//     // parada.inLinePerson( {edad: 79, someProblem: false } );
-//     // parada.inLinePerson( {edad: 30, someProblem: false } );
-//     // parada.inLinePerson( {edad: 18, someProblem: true } );
+class Parada extends Paradas {
+    constructor(name:string, TermOrHeader:boolean ) {
+        super(name, TermOrHeader)
+    }
+}
 
-// }TestingMain()
+export { Paradas ,Parada, Terminal, Cabecera }
