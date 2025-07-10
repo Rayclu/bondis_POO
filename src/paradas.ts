@@ -29,7 +29,7 @@ class Cabecera extends Paradas{
 }
 
 class Parada extends Paradas {
-    constructor(name:string, TermOrHeader:boolean ) {
+    constructor(name:string, TermOrHeader=false ) {
         super(name, TermOrHeader)
     }
 }

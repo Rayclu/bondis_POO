@@ -1,4 +1,4 @@
-import { json } from 'node:stream/consumers';
+import { threadId } from 'worker_threads';
 import { Paradas, Parada, Terminal, Cabecera } from './paradas'
 import { Personas } from './personas';
 
@@ -19,8 +19,8 @@ export class Bondis {
     public Ida_o_Vuelta: boolean = true; // true = vuelta | false = ida (el razonamiento lo explicó un chofer de la 57.)
     private currentStation;
     private nafta:number;
-    private actualizarNafta: () => [number, boolean] = () => {
-        var n = this.nafta - (this.Pasajeros.length -1 * 0.1);
+    private actualizarNafta = (pasajeros = this.Pasajeros.length - 1 ) => {
+        const n = this.nafta - (pasajeros * 0.1);
         return [n, n>0];
     };
 
@@ -77,6 +77,11 @@ export class Bondis {
         this.currentStation = this.recorrido[0];
         this.chargeFuel();
     }
+    private resetPeopole() {
+        //this.currentStation.queue.concat(this.Pasajeros);
+        this.Pasajeros = [];
+
+    }
     private getRandomKey():number{
         const keys = Object.keys(this.RecorridosPosibles);
         return Number(keys[Math.floor(Math.random()*keys.length)-1]);
@@ -87,7 +92,7 @@ export class Bondis {
     //----------------------------------------------------------------INICIAR LAS PARADAS
         route.forEach(parada => {
             if(!(parada instanceof Terminal || parada instanceof Cabecera)){
-                for(let i = 0; i <= Math.floor(Math.random()*15); i++){
+            for(let i = 0; i <= Math.floor(Math.random()*15); i++){
                     parada.inLinePerson(
                         new Personas({
                             edad: Math.floor(Math.random() * 100),
@@ -99,21 +104,39 @@ export class Bondis {
         })
         return route;
     }
-    public HacerRecorrido(sentido:boolean | null = null){
+    public HacerRecorrido(sentido:boolean | null = null):any{
         if(!this.actualizarNafta()[1]) throw new Error("El bondi no llegará a la proxima parada.");
 
-        if(this.recorrido.indexOf(this.currentStation) == 0 && sentido == true) sentido = false;
+        if( this.recorrido.indexOf(this.currentStation) == 0 && sentido == true ) sentido = false;
         if(this.recorrido.indexOf(this.currentStation) == this.recorrido.length - 1) sentido = true;
  
         const nextStation = sentido ? this.recorrido.indexOf(this.currentStation)-1 : this.recorrido.indexOf(this.currentStation)+1;
         // true = vuelta | false = ida (el razonamiento lo explicó un chofer de la 57.)
-        if((nextStation == 1 && sentido) || (nextStation == this.recorrido.length -1 && !sentido)){
-        //   this. 
+        const numberOfPeopoleInTheStation: () => number = () => {
+            return this.currentStation.queue.length-1
         }
-
-        
-        
-        this.HacerRecorrido(sentido);
+        const didNotArrive = new Error("El bondi no llegará a la prox. parada")
+        if(nextStation == 0 && sentido){
+            if (this.actualizarNafta(this.Pasajeros.length + numberOfPeopoleInTheStation())[1]) {
+                
+                this.resetPeopole();
+                return this.HacerRecorrido(sentido);
+            }
+            const How_much_peopole_I_want_to_down = () => {
+                
+            }
+        }else if(nextStation == this.recorrido.length -1 && !sentido){
+            if (this.actualizarNafta(this.Pasajeros.length + numberOfPeopoleInTheStation())[1]) {
+                
+                this.resetPeopole();
+                return this.HacerRecorrido(sentido);
+            }
+            const How_much_peopole_I_want_to_down = () => {
+                
+            }
+        }else{
+            throw new Error("Error en el recorrido, no se puede avanzar.")
+        }
     }
     addStation(newSt: Parada, index: number){
         const currRoute: Paradas[] = this.recorrido;
@@ -127,13 +150,12 @@ export class Bondis {
             currRoute.unshift(new Cabecera())
     
         }else{
-            const reSortStations = ( part1: Paradas[], part2: Paradas[], newElem: Parada)=> {
+            const reSortStations = ( part1: Paradas[], part2: Paradas[], newElem: Parada) => {
                 return part1.concat(newElem).concat(part2);
             };
             reSortStations(this.recorrido.slice(0, index), this.recorrido.slice(index+1), newSt)
 
         }
-
     }
 
     public chargeFuel() {
@@ -145,5 +167,6 @@ const test = () => {
     const TestBondi = new Bondis();
     console.log(TestBondi.linea);
     console.log(TestBondi.recorrido);
+    console.log(TestBondi.addStation(new Parada(""), TestBondi.recorrido.length - 1 ));
 }
 test();
