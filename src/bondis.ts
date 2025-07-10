@@ -1,3 +1,4 @@
+import { json } from 'node:stream/consumers';
 import { Paradas, Parada, Terminal, Cabecera } from './paradas'
 import { Personas } from './personas';
 
@@ -81,8 +82,8 @@ export class Bondis {
         return Number(keys[Math.floor(Math.random()*keys.length)-1]);
     }
     private initializeRoute(route: Recorrido):Recorrido{
-        route.push(new Cabecera("Cabecera"));
-        route.unshift(new Terminal("Terminal"));
+        route.push(new Cabecera());
+        route.unshift(new Terminal());
     //----------------------------------------------------------------INICIAR LAS PARADAS
         route.forEach(parada => {
             if(!(parada instanceof Terminal || parada instanceof Cabecera)){
@@ -114,7 +115,27 @@ export class Bondis {
         
         this.HacerRecorrido(sentido);
     }
+    addStation(newSt: Parada, index: number){
+        const currRoute: Paradas[] = this.recorrido;
+        if ( currRoute[index] instanceof Terminal ){
+            currRoute[index] = newSt;
+            currRoute.push(new Terminal());
+            
+
+        }else if( currRoute[index] instanceof Cabecera ){
+            currRoute[index] = newSt;
+            currRoute.unshift(new Cabecera())
     
+        }else{
+            const reSortStations = ( part1: Paradas[], part2: Paradas[], newElem: Parada)=> {
+                return part1.concat(newElem).concat(part2);
+            };
+            reSortStations(this.recorrido.slice(0, index), this.recorrido.slice(index+1), newSt)
+
+        }
+
+    }
+
     public chargeFuel() {
         this.nafta = 100;         
     }

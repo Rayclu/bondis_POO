@@ -17,14 +17,14 @@ class Paradas{
     }
 }
 class Terminal extends Paradas{
-    constructor(name:string, TermOrHeader:boolean = true){
-        super(name, true);
+    constructor(TermOrHeader:boolean = true){
+        super("Terminal", true);
     }
 }
 
 class Cabecera extends Paradas{
-    constructor(name:string, TermOrHeader:boolean = true) {
-        super(name, true)
+    constructor(TermOrHeader:boolean = true) {
+        super("Cabecera", true)
     }
 }
 
