@@ -1,33 +1,27 @@
-import { threadId } from 'worker_threads';
+import { log } from 'console';
 import { Paradas, Parada, Terminal, Cabecera } from './paradas'
 import { Personas } from './personas';
+import assert = require('assert');
+
 
 type Recorrido = Paradas[];
-/*
-interface Header {
-    name: string;
-}
-interface TerminalInterface {
-    name:string;
-}
-*/
 export class Bondis {
     private Pasajeros: Personas[] = [];
     private static MAX_PASAJEROS = 70;
     public recorrido: Recorrido = [];
-    public linea: number;
+    public linea: number | null;
     public Ida_o_Vuelta: boolean = true; // true = vuelta | false = ida (el razonamiento lo explicó un chofer de la 57.)
-    private currentStation;
-    private nafta:number;
+    public nafta:number;
+    private currentStation:Paradas;
     private actualizarNafta = (pasajeros = this.Pasajeros.length - 1 ) => {
         const n = this.nafta - (pasajeros * 0.1);
         return [n, n>0];
     };
 
     
-    private readonly RecorridosPosibles: { [linea: number]: Recorrido } = {
-        60: [
-            //new Paradas("BarracasTerminal", true),
+    private readonly RecorridosPosibles: { [linea: string]: Recorrido } = {
+        "1": [],
+        "60": [
             new Paradas("Barracas"),
             new Paradas("Monserrat"),
             new Paradas("Pacifico"),
@@ -35,19 +29,15 @@ export class Bondis {
             new Paradas("Barrancas"),
             new Paradas("Olivos"),
             new Paradas("Escobar"),
-            //new Paradas("EscobarTerminal", true)
         ],
-        29: [
-            //new Paradas("LaBocaTerminal", true),
+        "29": [
             new Paradas("LaBoca"),
             new Paradas("SanTelmo"),
             new Paradas("PlazaItalia"),
             new Paradas("Belgrano"),
             new Paradas("Olivos"),
-            //new Paradas("OlivosTerminal", true)
         ],
-        130: [
-           // new Paradas("LaBocaTerminal", true),
+        "130": [
             new Paradas("LaBoca"),
             new Paradas("PuertoMadero"),
             new Paradas("Retiro"),
@@ -56,37 +46,42 @@ export class Bondis {
             new Paradas("Nuñez"),
             new Paradas("VicenteLopez"),
             new Paradas("Munro")
-            //            new Paradas("MunroTerminal", true)
         ]
     };
-
-    
-
     constructor() {
         const k = this.getRandomKey();
         this.nafta = 100;
-        this.linea = !isNaN(k) ? k : 60;
-        /*this.recorrido = this.initializeRoute(
-            this.RecorridosPosibles[this.linea],
-            { name: "Cabecera" },
-            { name: "Terminal" }
-        );*/
+        this.linea = !isNaN(k) ? k : 1;
         this.recorrido = this.initializeRoute(
             this.RecorridosPosibles[this.linea]
         );
         this.currentStation = this.recorrido[0];
         this.chargeFuel();
     }
-    private resetPeopole() {
-        //this.currentStation.queue.concat(this.Pasajeros);
-        this.Pasajeros = [];
 
+    async delay(ms: number) {
+        await new Promise<void>(resolve => setTimeout(()=>resolve(), ms)).then(()=>console.log());
     }
+
+    private resetPeopole() {
+        this.Pasajeros = [];
+    }
+
     private getRandomKey():number{
         const keys = Object.keys(this.RecorridosPosibles);
+        console.log(keys);
         return Number(keys[Math.floor(Math.random()*keys.length)-1]);
     }
+
     private initializeRoute(route: Recorrido):Recorrido{
+
+        if(!route) {
+            console.log(`
+                this->linea = ${this.linea},
+                this->recorrido = ${this.recorrido}
+            `);
+            throw new Error("No se generó el recorrido.")
+        } 
         route.push(new Cabecera());
         route.unshift(new Terminal());
     //----------------------------------------------------------------INICIAR LAS PARADAS
@@ -104,40 +99,47 @@ export class Bondis {
         })
         return route;
     }
-    public HacerRecorrido(sentido:boolean | null = null):any{
-        if(!this.actualizarNafta()[1]) throw new Error("El bondi no llegará a la proxima parada.");
 
-        if( this.recorrido.indexOf(this.currentStation) == 0 && sentido == true ) sentido = false;
-        if(this.recorrido.indexOf(this.currentStation) == this.recorrido.length - 1) sentido = true;
- 
-        const nextStation = sentido ? this.recorrido.indexOf(this.currentStation)-1 : this.recorrido.indexOf(this.currentStation)+1;
+    //public HacerRecorrido(sentido:boolean = true):any{
+    public HacerRecorrido(
+        gs:(s: boolean) => boolean = (s=true) => {
+            const nst: number = s ? this.recorrido.indexOf(this.currentStation)-1 : this.recorrido.indexOf(this.currentStation)+1; 
+            if(nst == 0 || nst == this.recorrido.length-1){
+                return false
+            }
+            return true
+        }
+    ):any{
+        const sentido = gs(this.Ida_o_Vuelta);
+        //console.log(`Sentido--> ${sentido}`);
+        if(!this.actualizarNafta()[1]) throw new Error("El bondi no llegará a la proxima parada.");
+        console.log(this.recorrido.indexOf(this.currentStation));
+        
+        //if( this.recorrido.indexOf(this.currentStation) == 1 && sentido == true ) sentido = false;
+        //if(this.recorrido.indexOf(this.currentStation) == this.recorrido.length - 1) sentido = true;
+        this.delay(1);
+        
         // true = vuelta | false = ida (el razonamiento lo explicó un chofer de la 57.)
-        const numberOfPeopoleInTheStation: () => number = () => {
-            return this.currentStation.queue.length-1
-        }
-        const didNotArrive = new Error("El bondi no llegará a la prox. parada")
-        if(nextStation == 0 && sentido){
+        
+        //throw new Error("Error en el recorrido, no se puede avanzar.")
+
+
+/*        if(nextStation == 0 && sentido){
+            
+
             if (this.actualizarNafta(this.Pasajeros.length + numberOfPeopoleInTheStation())[1]) {
                 
                 this.resetPeopole();
-                return this.HacerRecorrido(sentido);
+                return this.HacerRecorrido((sentido:boolean) => {
+                    const nextStation = sentido ? this.recorrido.indexOf(this.currentStation)-1 : this.recorrido.indexOf(this.currentStation)+1;
+                    return (this.recorrido[nextStation] instanceof Terminal || this.recorrido[nextStation] instanceof Cabecera);
+                });
             }
             const How_much_peopole_I_want_to_down = () => {
                 
             }
-        }else if(nextStation == this.recorrido.length -1 && !sentido){
-            if (this.actualizarNafta(this.Pasajeros.length + numberOfPeopoleInTheStation())[1]) {
-                
-                this.resetPeopole();
-                return this.HacerRecorrido(sentido);
-            }
-            const How_much_peopole_I_want_to_down = () => {
-                
-            }
-        }else{
-            throw new Error("Error en el recorrido, no se puede avanzar.")
-        }
-    }
+  */
+}
     addStation(newSt: Parada, index: number){
         const currRoute: Paradas[] = this.recorrido;
         if ( currRoute[index] instanceof Terminal ){
@@ -163,10 +165,3 @@ export class Bondis {
     }
 }
 
-const test = () => {
-    const TestBondi = new Bondis();
-    console.log(TestBondi.linea);
-    console.log(TestBondi.recorrido);
-    console.log(TestBondi.addStation(new Parada(""), TestBondi.recorrido.length - 1 ));
-}
-test();
