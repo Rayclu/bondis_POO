@@ -9,5 +9,6 @@ const testBondiInfo = () => {
 };testBondiInfo();
 
 const TestRecorridoBondi = (bondi = new Bondis()) => {
+    
     bondi.HacerRecorrido();
 };TestRecorridoBondi();
